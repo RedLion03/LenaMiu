@@ -1,0 +1,13 @@
+-- ============================================================================
+-- Seed file — runs after migrations on `supabase db reset`.
+--
+-- The login flow is email + 6-digit OTP (via Supabase Auth). The login
+-- ITSELF never creates a new user (`shouldCreateUser: false`). The only way
+-- to onboard the first admin (and any subsequent ones) is the CLI script:
+--
+--   npm run admin:create -- email@example.com
+--
+-- That creates the auth.users row (with email pre-confirmed) AND the
+-- public.admins row. Anyone whose email is not in admins gets "no access"
+-- at /admin/login — the OTP is never even sent.
+-- ============================================================================
