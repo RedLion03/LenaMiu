@@ -63,6 +63,13 @@ export function Lightbox({ videos, index, onClose, onNav }: Props) {
                 allowFullScreen
                 className="block size-full border-0 object-contain"
               />
+            ) : video.src_type === "image" ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={video.src}
+                alt={video.caption}
+                className="block size-full border-0 object-contain"
+              />
             ) : (
               <video
                 src={video.src}

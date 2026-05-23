@@ -3,6 +3,7 @@ import { headers } from "next/headers";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
 import { InviteQrPanel } from "@/components/InviteQrPanel";
+import { SubmitButton } from "@/components/SubmitButton";
 import { revokeInvite, unrevokeInvite, deleteInvite } from "../actions";
 
 type RouteParams = Promise<{ id: string }>;
@@ -143,21 +144,21 @@ export default async function InviteDetailPage({
           <div className="flex gap-2">
             <form action={invite.revoked_at ? unrevokeInvite : revokeInvite}>
               <input type="hidden" name="id" value={invite.id} />
-              <button
-                type="submit"
-                className="rounded-full border border-ink/15 px-4 py-2 text-xs uppercase tracking-widest hover:bg-ink/5"
+              <SubmitButton
+                pendingLabel="…"
+                className="rounded-full border border-ink/15 px-4 py-2 text-xs uppercase tracking-widest hover:bg-ink/5 disabled:cursor-wait disabled:opacity-70"
               >
                 {invite.revoked_at ? "unrevoke" : "revoke"}
-              </button>
+              </SubmitButton>
             </form>
             <form action={deleteInvite}>
               <input type="hidden" name="id" value={invite.id} />
-              <button
-                type="submit"
-                className="rounded-full border border-red-200 px-4 py-2 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50"
+              <SubmitButton
+                pendingLabel="…"
+                className="rounded-full border border-red-200 px-4 py-2 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:cursor-wait disabled:opacity-70"
               >
                 delete
-              </button>
+              </SubmitButton>
             </form>
           </div>
         </div>

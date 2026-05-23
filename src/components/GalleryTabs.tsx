@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Images, MessageCircle } from "lucide-react";
 
 export type GalleryTab = "memories" | "messages";
 
@@ -10,38 +11,47 @@ type Props = {
 };
 
 export function GalleryTabs({ active, basePath, counts }: Props) {
-  const tabs: { key: GalleryTab; label: string; count: number; href: string }[] = [
+  const tabs: {
+    key: GalleryTab;
+    label: string;
+    count: number;
+    href: string;
+    Icon: typeof Images;
+  }[] = [
     {
       key: "memories",
       label: "memories",
       count: counts.memories,
       href: basePath,
+      Icon: Images,
     },
     {
       key: "messages",
       label: "messages",
       count: counts.messages,
       href: `${basePath}?tab=messages`,
+      Icon: MessageCircle,
     },
   ];
 
   return (
     <nav className="flex justify-center gap-10">
-      {tabs.map((t) => {
-        const isActive = active === t.key;
+      {tabs.map(({ key, label, count, href, Icon }) => {
+        const isActive = active === key;
         return (
           <Link
-            key={t.key}
-            href={t.href}
-            className={`font-display border-b-2 pb-2 text-2xl transition-colors ${
+            key={key}
+            href={href}
+            className={`font-display flex items-center gap-2 border-b-2 pb-2 text-2xl transition-colors ${
               isActive
                 ? "border-sky-deep text-ink"
                 : "border-transparent text-ink-3 hover:text-ink"
             }`}
           >
-            {t.label}
+            <Icon size={22} strokeWidth={1.5} aria-hidden />
+            {label}
             <span className="ml-1 align-top text-[10px] uppercase tracking-widest text-ink-4">
-              {t.count}
+              {count}
             </span>
           </Link>
         );

@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { thumbForVideo } from "@/lib/media";
+import { AdminMediaPreview } from "@/components/AdminMediaPreview";
 import { ConfirmForm } from "@/components/ConfirmForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { deleteVideo, setVideoStatus } from "./actions";
 
 type SearchParams = Promise<{ error?: string; status?: string }>;
@@ -17,9 +19,15 @@ const STATUS_TONE: Record<string, string> = {
 };
 
 const SOURCE_TONE: Record<string, string> = {
-  qr: "bg-sky-light text-sky-deep",
+  qr: "bg-gold-light text-gold-deep",
   requested: "bg-ink/10 text-ink",
   admin: "bg-amber-100 text-amber-800",
+};
+
+const RECIPIENT_TONE: Record<string, string> = {
+  lena: "bg-sky-light text-sky-deep",
+  miu: "bg-pink-light text-pink-deep",
+  both: "bg-ink/5 text-ink-2",
 };
 
 export default async function AdminVideosPage({
@@ -42,7 +50,7 @@ export default async function AdminVideosPage({
   let q = supabase
     .from("videos")
     .select(
-      "id, src_type, src, thumb, caption, source, status, requester_email, invite_id, likes_count, created_at",
+      "id, src_type, src, thumb, caption, source, status, requester_email, invite_id, likes_count, recipient, created_at",
     )
     .order("created_at", { ascending: false });
   if (filter !== "all") q = q.eq("status", filter);
@@ -90,9 +98,10 @@ export default async function AdminVideosPage({
         <table className="w-full text-sm">
           <thead className="bg-ink/5 text-xs uppercase tracking-widest text-ink-2">
             <tr>
-              <th className="px-4 py-3 text-left">thumb</th>
+              <th className="px-4 py-3 text-left">preview</th>
               <th className="px-4 py-3 text-left">caption</th>
               <th className="px-4 py-3 text-left">source</th>
+              <th className="px-4 py-3 text-left">for</th>
               <th className="px-4 py-3 text-left">status</th>
               <th className="px-4 py-3 text-left">likes</th>
               <th className="px-4 py-3 text-right">actions</th>
@@ -101,14 +110,14 @@ export default async function AdminVideosPage({
           <tbody>
             {error && (
               <tr>
-                <td colSpan={6} className="px-4 py-6 text-center text-red-700">
+                <td colSpan={7} className="px-4 py-6 text-center text-red-700">
                   {error.message}
                 </td>
               </tr>
             )}
             {!error && (videos?.length ?? 0) === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-10 text-center text-ink-3">
+                <td colSpan={7} className="px-4 py-10 text-center text-ink-3">
                   nothing here.
                 </td>
               </tr>
@@ -118,16 +127,12 @@ export default async function AdminVideosPage({
               return (
                 <tr key={v.id} className="border-t border-ink/5">
                   <td className="px-4 py-3">
-                    {thumb ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img
-                        src={thumb}
-                        alt={v.caption}
-                        className="h-12 w-20 rounded object-cover"
-                      />
-                    ) : (
-                      <div className="h-12 w-20 rounded bg-ink/5" />
-                    )}
+                    <AdminMediaPreview
+                      src_type={v.src_type}
+                      src={v.src}
+                      thumb={thumb}
+                      caption={v.caption}
+                    />
                   </td>
                   <td className="px-4 py-3">
                     <div className="font-medium">{v.caption}</div>
@@ -146,6 +151,13 @@ export default async function AdminVideosPage({
                         {v.requester_email}
                       </div>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-xs">
+                    <span
+                      className={`rounded-full px-2 py-0.5 uppercase tracking-widest ${RECIPIENT_TONE[v.recipient] ?? ""}`}
+                    >
+                      {v.recipient}
+                    </span>
                   </td>
                   <td className="px-4 py-3">
                     <span
@@ -166,12 +178,12 @@ export default async function AdminVideosPage({
                               name="status"
                               value="approved"
                             />
-                            <button
-                              type="submit"
-                              className="rounded-full bg-emerald-500 px-3 py-1 text-xs uppercase tracking-widest text-white hover:bg-emerald-600"
+                            <SubmitButton
+                              pendingLabel="…"
+                              className="rounded-full bg-emerald-500 px-3 py-1 text-xs uppercase tracking-widest text-white hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-70"
                             >
                               approve
-                            </button>
+                            </SubmitButton>
                           </form>
                           <form action={setVideoStatus}>
                             <input type="hidden" name="id" value={v.id} />
@@ -180,12 +192,12 @@ export default async function AdminVideosPage({
                               name="status"
                               value="rejected"
                             />
-                            <button
-                              type="submit"
-                              className="rounded-full border border-red-200 px-3 py-1 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50"
+                            <SubmitButton
+                              pendingLabel="…"
+                              className="rounded-full border border-red-200 px-3 py-1 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:cursor-wait disabled:opacity-70"
                             >
                               reject
-                            </button>
+                            </SubmitButton>
                           </form>
                         </>
                       ) : (
@@ -198,12 +210,12 @@ export default async function AdminVideosPage({
                               v.status === "approved" ? "draft" : "approved"
                             }
                           />
-                          <button
-                            type="submit"
-                            className="rounded-full border border-ink/15 px-3 py-1 text-xs uppercase tracking-widest hover:bg-ink/5"
+                          <SubmitButton
+                            pendingLabel="…"
+                            className="rounded-full border border-ink/15 px-3 py-1 text-xs uppercase tracking-widest hover:bg-ink/5 disabled:cursor-wait disabled:opacity-70"
                           >
                             {v.status === "approved" ? "unpublish" : "publish"}
-                          </button>
+                          </SubmitButton>
                         </form>
                       )}
                       <Link
@@ -217,13 +229,15 @@ export default async function AdminVideosPage({
                         confirm="delete this video?"
                       >
                         <input type="hidden" name="id" value={v.id} />
-                        <button
-                          type="submit"
+                        <SubmitButton
                           aria-label="delete"
-                          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 hover:bg-red-50 hover:text-red-700"
+                          pendingContent={
+                            <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
+                          }
+                          className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 hover:bg-red-50 hover:text-red-700 disabled:cursor-wait"
                         >
                           <Trash2 size={15} strokeWidth={1.75} />
-                        </button>
+                        </SubmitButton>
                       </ConfirmForm>
                     </div>
                   </td>

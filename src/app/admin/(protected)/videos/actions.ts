@@ -13,10 +13,13 @@ import {
   notifyRequestRejected,
 } from "@/lib/notifications";
 
+const recipientSchema = z.enum(["lena", "miu", "both"]).default("both");
+
 const youtubeSchema = z.object({
   caption: z.string().trim().min(1, "caption required").max(25),
   youtubeUrl: z.string().trim().min(1, "youtube link required"),
   publishNow: z.preprocess((v) => v === "on" || v === true, z.boolean()),
+  recipient: recipientSchema,
 });
 
 export async function createYouTubeVideo(formData: FormData) {
@@ -26,6 +29,7 @@ export async function createYouTubeVideo(formData: FormData) {
     caption: formData.get("caption"),
     youtubeUrl: formData.get("youtubeUrl"),
     publishNow: formData.get("publishNow"),
+    recipient: formData.get("recipient") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -49,6 +53,7 @@ export async function createYouTubeVideo(formData: FormData) {
       caption: parsed.data.caption,
       source: "admin",
       status,
+      recipient: parsed.data.recipient,
       created_by: user.id,
     })
     .select("id")
@@ -73,6 +78,7 @@ const uploadSchema = z.object({
   caption: z.string().trim().min(1, "caption required").max(25),
   cloudinaryUrl: z.string().url("upload not finished"),
   publishNow: z.preprocess((v) => v === "on" || v === true, z.boolean()),
+  recipient: recipientSchema,
 });
 
 export async function createUploadVideo(formData: FormData) {
@@ -82,6 +88,7 @@ export async function createUploadVideo(formData: FormData) {
     caption: formData.get("caption"),
     cloudinaryUrl: formData.get("cloudinaryUrl"),
     publishNow: formData.get("publishNow"),
+    recipient: formData.get("recipient") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -101,6 +108,54 @@ export async function createUploadVideo(formData: FormData) {
       caption: parsed.data.caption,
       source: "admin",
       status,
+      recipient: parsed.data.recipient,
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
+
+  if (error || !inserted) {
+    redirect(
+      `/admin/videos/new?error=${encodeURIComponent(error?.message ?? "insert failed")}`,
+    );
+  }
+
+  if (status === "approved") {
+    after(() => notifyNewVideoBlast(inserted.id));
+  }
+
+  revalidatePath("/");
+  revalidatePath("/admin/videos");
+  redirect("/admin/videos");
+}
+
+export async function createImageVideo(formData: FormData) {
+  const { user, supabase } = await requireAdmin();
+
+  const parsed = uploadSchema.safeParse({
+    caption: formData.get("caption"),
+    cloudinaryUrl: formData.get("cloudinaryUrl"),
+    publishNow: formData.get("publishNow"),
+    recipient: formData.get("recipient") || undefined,
+  });
+  if (!parsed.success) {
+    redirect(
+      `/admin/videos/new?error=${encodeURIComponent(parsed.error.issues[0]?.message ?? "invalid")}`,
+    );
+  }
+
+  const status = parsed.data.publishNow ? "approved" : "draft";
+
+  const { data: inserted, error } = await supabase
+    .from("videos")
+    .insert({
+      src_type: "image",
+      src: parsed.data.cloudinaryUrl,
+      thumb: parsed.data.cloudinaryUrl,
+      caption: parsed.data.caption,
+      source: "admin",
+      status,
+      recipient: parsed.data.recipient,
       created_by: user.id,
     })
     .select("id")
@@ -125,6 +180,7 @@ const updateSchema = z.object({
   id: z.string().uuid(),
   caption: z.string().trim().min(1).max(25),
   status: z.enum(["draft", "pending", "approved", "rejected"]),
+  recipient: recipientSchema,
 });
 
 export async function updateVideo(formData: FormData) {
@@ -134,6 +190,7 @@ export async function updateVideo(formData: FormData) {
     id: formData.get("id"),
     caption: formData.get("caption"),
     status: formData.get("status"),
+    recipient: formData.get("recipient") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -157,6 +214,7 @@ export async function updateVideo(formData: FormData) {
     .update({
       caption: parsed.data.caption,
       status: parsed.data.status,
+      recipient: parsed.data.recipient,
       ...(transitioningToApproved || transitioningToRejected
         ? { reviewed_by: user.id, reviewed_at: new Date().toISOString() }
         : {}),

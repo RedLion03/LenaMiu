@@ -3,6 +3,7 @@
 import { useId, useState } from "react";
 
 type Role = "admin" | "qr" | "request";
+export type MediaKind = "video" | "image";
 
 export type UploadResult = {
   public_id: string;
@@ -10,10 +11,12 @@ export type UploadResult = {
   format: string;
   duration?: number;
   bytes: number;
+  resource_type: MediaKind;
 };
 
 type Props = {
   role: Role;
+  kind?: MediaKind;
   inviteToken?: string;
   onChange: (result: UploadResult | null) => void;
 };
@@ -24,7 +27,27 @@ type State =
   | { kind: "done"; result: UploadResult }
   | { kind: "error"; message: string };
 
-export function VideoUploader({ role, inviteToken, onChange }: Props) {
+const COPY = {
+  video: {
+    icon: "🎬",
+    cta: "tap to choose a video",
+    hint: "mp4 · mov · webm",
+    accept: "video/*",
+  },
+  image: {
+    icon: "🖼️",
+    cta: "tap to choose an image",
+    hint: "jpg · png · webp · gif",
+    accept: "image/*",
+  },
+} satisfies Record<MediaKind, { icon: string; cta: string; hint: string; accept: string }>;
+
+export function MediaUploader({
+  role,
+  kind = "video",
+  inviteToken,
+  onChange,
+}: Props) {
   const inputId = useId();
   const [state, setState] = useState<State>({ kind: "idle" });
 
@@ -38,13 +61,14 @@ export function VideoUploader({ role, inviteToken, onChange }: Props) {
       timestamp: number;
       folder: string;
       signature: string;
+      resource_type: MediaKind;
     };
 
     try {
       const res = await fetch("/api/upload-signature", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ role, inviteToken }),
+        body: JSON.stringify({ role, kind, inviteToken }),
       });
       if (!res.ok) {
         const err = (await res.json().catch(() => ({}))) as { error?: string };
@@ -69,7 +93,7 @@ export function VideoUploader({ role, inviteToken, onChange }: Props) {
     const xhr = new XMLHttpRequest();
     xhr.open(
       "POST",
-      `https://api.cloudinary.com/v1_1/${signed.cloud_name}/video/upload`,
+      `https://api.cloudinary.com/v1_1/${signed.cloud_name}/${signed.resource_type}/upload`,
     );
 
     xhr.upload.onprogress = (e) => {
@@ -92,6 +116,7 @@ export function VideoUploader({ role, inviteToken, onChange }: Props) {
             format: data.format,
             duration: data.duration,
             bytes: data.bytes,
+            resource_type: signed.resource_type,
           };
           setState({ kind: "done", result });
           onChange(result);
@@ -115,13 +140,14 @@ export function VideoUploader({ role, inviteToken, onChange }: Props) {
   }
 
   const disabled = state.kind === "uploading";
+  const copy = COPY[kind];
 
   return (
     <div className="rounded-2xl border-2 border-dashed border-ink/15 bg-cream/40 p-6 text-center transition hover:border-sky">
       <input
         id={inputId}
         type="file"
-        accept="video/*"
+        accept={copy.accept}
         className="hidden"
         disabled={disabled}
         onChange={(e) => {
@@ -137,11 +163,11 @@ export function VideoUploader({ role, inviteToken, onChange }: Props) {
       >
         {state.kind === "idle" && (
           <>
-            <div className="text-3xl">🎬</div>
+            <div className="text-3xl">{copy.icon}</div>
             <div className="mt-2 text-xs uppercase tracking-widest text-ink-2">
-              tap to choose a video
+              {copy.cta}
             </div>
-            <div className="mt-1 text-[11px] text-ink-3">mp4 · mov · webm</div>
+            <div className="mt-1 text-[11px] text-ink-3">{copy.hint}</div>
           </>
         )}
         {state.kind === "uploading" && (

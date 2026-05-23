@@ -20,21 +20,27 @@ function isConfigured(): boolean {
   );
 }
 
+export type CloudinaryKind = "video" | "image";
+
 export type SignedUpload = {
   cloud_name: string;
   api_key: string;
   timestamp: number;
   folder: string;
   signature: string;
-  resource_type: "video";
+  resource_type: CloudinaryKind;
 };
 
 /**
- * Build signed Cloudinary upload params for the given folder. The client
- * uploads to https://api.cloudinary.com/v1_1/<cloud>/video/upload with this
- * payload. Cloudinary verifies the HMAC against api_secret on its side.
+ * Build signed Cloudinary upload params for the given folder + asset kind.
+ * The client uploads to https://api.cloudinary.com/v1_1/<cloud>/<kind>/upload
+ * with this payload. Cloudinary verifies the HMAC against api_secret on its
+ * side.
  */
-export function signUpload(folder: string): SignedUpload {
+export function signUpload(
+  folder: string,
+  kind: CloudinaryKind = "video",
+): SignedUpload {
   if (!isConfigured()) {
     throw new Error(
       "Cloudinary env vars missing: set NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME, " +
@@ -59,7 +65,7 @@ export function signUpload(folder: string): SignedUpload {
     timestamp,
     folder,
     signature,
-    resource_type: "video",
+    resource_type: kind,
   };
 }
 

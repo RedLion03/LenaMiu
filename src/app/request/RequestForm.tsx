@@ -1,8 +1,11 @@
 "use client";
 
 import { useState } from "react";
+import { Film, Image as ImageIcon, MessageCircle } from "lucide-react";
 import { requestMessage, requestUpload } from "./actions";
-import { VideoUploader, type UploadResult } from "@/components/VideoUploader";
+import { MediaUploader, type UploadResult } from "@/components/MediaUploader";
+import { RecipientField } from "@/components/RecipientField";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Props = {
   errorParam: string | null;
@@ -15,10 +18,18 @@ const ERRORS: Record<string, string> = {
   "too long": "Keep messages under 500 characters.",
   "provide a youtube link or upload a video":
     "Add a YouTube link or upload a video.",
+  "provide an image": "Upload an image.",
   "could not parse youtube link": "That doesn't look like a YouTube link.",
+  "invalid recipient": "Pick who this is for.",
 };
 
-type Kind = "video" | "message";
+type Kind = "video" | "image" | "message";
+
+const TABS: { id: Kind; label: string; Icon: typeof Film }[] = [
+  { id: "video", label: "video", Icon: Film },
+  { id: "image", label: "image", Icon: ImageIcon },
+  { id: "message", label: "message", Icon: MessageCircle },
+];
 
 export function RequestForm({ errorParam }: Props) {
   const [kind, setKind] = useState<Kind>("video");
@@ -28,26 +39,37 @@ export function RequestForm({ errorParam }: Props) {
     : null;
 
   return (
-    <div className="flex flex-col gap-4">
-      <div className="flex gap-2">
-        {(["video", "message"] as const).map((k) => (
-          <button
-            key={k}
-            type="button"
-            onClick={() => setKind(k)}
-            className={`flex-1 rounded-full px-4 py-2 text-xs uppercase tracking-widest transition ${
-              kind === k
-                ? "bg-sky text-ink"
-                : "border border-ink/15 text-ink-2 hover:bg-ink/5"
-            }`}
-          >
-            {k}
-          </button>
-        ))}
+    <div className="flex flex-col gap-6">
+      <div
+        role="tablist"
+        className="flex items-end justify-center gap-8 border-b border-ink/10"
+      >
+        {TABS.map(({ id, label, Icon }) => {
+          const active = kind === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => setKind(id)}
+              className={`-mb-px flex cursor-pointer items-center gap-2 border-b-2 px-1 pb-3 text-xs uppercase tracking-widest transition-colors ${
+                active
+                  ? "border-sky-deep text-ink"
+                  : "border-transparent text-ink-3 hover:text-ink-2"
+              }`}
+            >
+              <Icon size={16} strokeWidth={1.75} />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       {kind === "video" ? (
         <VideoForm error={error} />
+      ) : kind === "image" ? (
+        <ImageForm error={error} />
       ) : (
         <MessageForm error={error} />
       )}
@@ -115,6 +137,7 @@ function VideoForm({ error }: { error: string | null }) {
 
   return (
     <form action={requestUpload} className="flex flex-col gap-4">
+      <input type="hidden" name="kind" value="video" />
       <input type="hidden" name="mode" value={mode} />
       <EmailField />
 
@@ -135,6 +158,8 @@ function VideoForm({ error }: { error: string | null }) {
           className="mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
         />
       </div>
+
+      <RecipientField />
 
       <div className="flex gap-2">
         <button
@@ -184,7 +209,7 @@ function VideoForm({ error }: { error: string | null }) {
             name="cloudinaryUrl"
             value={upload?.secure_url ?? ""}
           />
-          <VideoUploader role="request" onChange={setUpload} />
+          <MediaUploader role="request" kind="video" onChange={setUpload} />
         </>
       )}
 
@@ -196,20 +221,81 @@ function VideoForm({ error }: { error: string | null }) {
         </p>
       )}
 
-      <button
-        type="submit"
+      <SubmitButton
         disabled={mode === "upload" && !upload}
+        pendingLabel="sending…"
         className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-4"
       >
         submit request
-      </button>
+      </SubmitButton>
+    </form>
+  );
+}
+
+function ImageForm({ error }: { error: string | null }) {
+  const [upload, setUpload] = useState<UploadResult | null>(null);
+
+  return (
+    <form action={requestUpload} className="flex flex-col gap-4">
+      <input type="hidden" name="kind" value="image" />
+      <input
+        type="hidden"
+        name="cloudinaryUrl"
+        value={upload?.secure_url ?? ""}
+      />
+      <EmailField />
+
+      <div>
+        <label
+          htmlFor="caption"
+          className="text-xs uppercase tracking-widest text-ink-2"
+        >
+          caption
+        </label>
+        <input
+          id="caption"
+          name="caption"
+          type="text"
+          required
+          maxLength={25}
+          placeholder="picnic in the park…"
+          className="mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
+        />
+      </div>
+
+      <RecipientField />
+
+      <MediaUploader role="request" kind="image" onChange={setUpload} />
+
+      <NameFields />
+
+      {error && (
+        <p className="rounded-xl bg-red-50 px-4 py-2 text-sm text-red-700">
+          {error}
+        </p>
+      )}
+
+      <SubmitButton
+        disabled={!upload}
+        pendingLabel="sending…"
+        className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-4"
+      >
+        submit request
+      </SubmitButton>
     </form>
   );
 }
 
 function MessageForm({ error }: { error: string | null }) {
+  const [image, setImage] = useState<UploadResult | null>(null);
+
   return (
     <form action={requestMessage} className="flex flex-col gap-4">
+      <input
+        type="hidden"
+        name="imageUrl"
+        value={image?.secure_url ?? ""}
+      />
       <EmailField />
 
       <div>
@@ -231,6 +317,17 @@ function MessageForm({ error }: { error: string | null }) {
         />
       </div>
 
+      <RecipientField />
+
+      <div>
+        <p className="text-xs uppercase tracking-widest text-ink-2">
+          attach an image (optional)
+        </p>
+        <div className="mt-2">
+          <MediaUploader role="request" kind="image" onChange={setImage} />
+        </div>
+      </div>
+
       <NameFields />
 
       {error && (
@@ -239,12 +336,12 @@ function MessageForm({ error }: { error: string | null }) {
         </p>
       )}
 
-      <button
-        type="submit"
-        className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+      <SubmitButton
+        pendingLabel="sending…"
+        className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
       >
         submit request
-      </button>
+      </SubmitButton>
     </form>
   );
 }

@@ -9,12 +9,20 @@ import { deriveThumb } from "@/lib/cloudinary";
 import { createServiceClient } from "@/lib/supabase/service";
 import { notifyVideoLiked } from "@/lib/notifications";
 
+const recipientSchema = z.enum(["lena", "miu", "both"]).default("both");
+
 // ----------------------------------------------------------------------------
 // Message slot — save (insert or update) and remove. One message per invite.
 // ----------------------------------------------------------------------------
 const messageSchema = z.object({
   token: z.string().min(1),
   message: z.string().trim().min(1, "message required").max(500, "too long"),
+  recipient: recipientSchema,
+  imageUrl: z
+    .string()
+    .url()
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
 });
 
 export async function saveMessage(formData: FormData) {
@@ -23,6 +31,8 @@ export async function saveMessage(formData: FormData) {
   const parsed = messageSchema.safeParse({
     token: tokenRaw,
     message: formData.get("message"),
+    recipient: formData.get("recipient") || undefined,
+    imageUrl: formData.get("imageUrl") || undefined,
   });
   if (!parsed.success) {
     const msg = parsed.error.issues[0]?.message ?? "invalid";
@@ -49,6 +59,8 @@ export async function saveMessage(formData: FormData) {
           status: "pending",
           reviewed_by: null,
           reviewed_at: null,
+          recipient: parsed.data.recipient,
+          image_url: parsed.data.imageUrl ?? null,
         })
         .eq("id", existing.id)
     : await svc.from("messages").insert({
@@ -56,6 +68,8 @@ export async function saveMessage(formData: FormData) {
         source: "qr",
         invite_id: invite.id,
         status: "pending",
+        recipient: parsed.data.recipient,
+        image_url: parsed.data.imageUrl ?? null,
       });
 
   if (error) {
@@ -83,13 +97,15 @@ export async function removeMessage(formData: FormData) {
 }
 
 // ----------------------------------------------------------------------------
-// Video slot — save (insert or update in-place) and remove. One video per
-// invite (partial unique index videos_one_per_invite_idx enforces it).
+// Video/image slot — save (insert or update in-place) and remove. One asset
+// per invite (partial unique index videos_one_per_invite_idx enforces it).
 // ----------------------------------------------------------------------------
 const videoSchema = z.object({
   token: z.string().min(1),
   cloudinaryUrl: z.string().url("upload not finished"),
   caption: z.string().trim().min(1, "caption required").max(25),
+  mode: z.enum(["video", "image"]).default("video"),
+  recipient: recipientSchema,
 });
 
 export async function saveVideo(formData: FormData) {
@@ -99,6 +115,8 @@ export async function saveVideo(formData: FormData) {
     token: tokenRaw,
     cloudinaryUrl: formData.get("cloudinaryUrl"),
     caption: formData.get("caption"),
+    mode: formData.get("mode") || undefined,
+    recipient: formData.get("recipient") || undefined,
   });
   if (!parsed.success) {
     const msg = parsed.error.issues[0]?.message ?? "invalid";
@@ -111,7 +129,11 @@ export async function saveVideo(formData: FormData) {
   }
 
   const svc = createServiceClient();
-  const thumb = deriveThumb(parsed.data.cloudinaryUrl);
+  const isImage = parsed.data.mode === "image";
+  const src_type = isImage ? "image" : "upload";
+  const thumb = isImage
+    ? parsed.data.cloudinaryUrl
+    : deriveThumb(parsed.data.cloudinaryUrl);
 
   const { data: existing } = await svc
     .from("videos")
@@ -124,12 +146,14 @@ export async function saveVideo(formData: FormData) {
     const { error } = await svc
       .from("videos")
       .update({
+        src_type,
         src: parsed.data.cloudinaryUrl,
         thumb,
         caption: parsed.data.caption,
         status: "pending",
         reviewed_by: null,
         reviewed_at: null,
+        recipient: parsed.data.recipient,
       })
       .eq("id", existing.id);
     if (error) {
@@ -139,13 +163,14 @@ export async function saveVideo(formData: FormData) {
     }
   } else {
     const { error } = await svc.from("videos").insert({
-      src_type: "upload",
+      src_type,
       src: parsed.data.cloudinaryUrl,
       thumb,
       caption: parsed.data.caption,
       source: "qr",
       invite_id: invite.id,
       status: "pending",
+      recipient: parsed.data.recipient,
     });
     if (error) {
       redirect(

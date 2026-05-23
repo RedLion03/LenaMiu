@@ -55,19 +55,19 @@ export default async function QrLandingPage({
     supabase
       .from("videos")
       .select(
-        "id, src_type, src, thumb, caption, source, status, requester_email, invite_id, display_name, show_name, reviewer_notes, reviewed_by, reviewed_at, likes_count, created_at, created_by",
+        "id, src_type, src, thumb, caption, source, status, requester_email, invite_id, display_name, show_name, reviewer_notes, reviewed_by, reviewed_at, likes_count, recipient, created_at, created_by",
       )
       .eq("status", "approved")
       .order("created_at", { ascending: false }),
     fetchApprovedMessages(),
     svc
       .from("videos")
-      .select("status, caption, src_type, src, thumb")
+      .select("status, caption, src_type, src, thumb, recipient")
       .eq("invite_id", invite.id)
       .maybeSingle(),
     svc
       .from("messages")
-      .select("status, text")
+      .select("status, text, recipient, image_url")
       .eq("invite_id", invite.id)
       .maybeSingle(),
     svc.from("likes").select("video_id").eq("invite_id", invite.id),
@@ -80,6 +80,8 @@ export default async function QrLandingPage({
       ? {
           status: myMessage.status as SlotStatus,
           text: myMessage.text,
+          recipient: myMessage.recipient ?? "both",
+          image_url: myMessage.image_url ?? null,
         }
       : null,
     video: myVideo
@@ -87,6 +89,8 @@ export default async function QrLandingPage({
           status: myVideo.status as SlotStatus,
           caption: myVideo.caption,
           thumb: thumbForVideo(myVideo.src_type, myVideo.src, myVideo.thumb),
+          src_type: myVideo.src_type,
+          recipient: myVideo.recipient ?? "both",
         }
       : null,
   };
@@ -102,19 +106,24 @@ export default async function QrLandingPage({
 
   return (
     <>
-      <GalleryHeader />
-      <QrLeaveTrigger
-        token={token}
-        errorParam={errorParam ?? null}
-        submitted={
-          submitted === "message" || submitted === "video" ? submitted : null
+      <GalleryHeader
+        actions={
+          <QrLeaveTrigger
+            token={token}
+            errorParam={errorParam ?? null}
+            submitted={
+              submitted === "message" || submitted === "video"
+                ? submitted
+                : null
+            }
+            removedSlot={
+              removed === "message" || removed === "video" ? removed : null
+            }
+            existing={existing}
+          />
         }
-        removedSlot={
-          removed === "message" || removed === "video" ? removed : null
-        }
-        existing={existing}
       />
-      <section className="mx-auto w-full max-w-5xl px-6 py-12">
+      <section className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
         <GalleryTabs
           active={tab}
           basePath={`/q/${token}`}

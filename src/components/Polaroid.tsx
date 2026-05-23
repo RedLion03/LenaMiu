@@ -1,5 +1,5 @@
 import type { CSSProperties } from "react";
-import type { Database } from "@/lib/supabase/database.types";
+import type { Database, Recipient } from "@/lib/supabase/database.types";
 import { thumbForVideo } from "@/lib/media";
 
 export type VideoRow = Database["public"]["Tables"]["videos"]["Row"];
@@ -16,6 +16,43 @@ type Props = {
   guestLabel?: string | null;
 };
 
+/**
+ * Background + tape colours by source/recipient. QR submissions are always
+ * gold (their own identity, regardless of recipient). Non-QR submissions use
+ * the recipient field: lena → blue, miu → pink, both → white.
+ */
+function colorsFor(
+  fromGuest: boolean,
+  recipient: Recipient,
+): { bg: string; tape: string; badge: string } {
+  if (fromGuest) {
+    return {
+      bg: "bg-gold-light",
+      tape: "bg-[rgba(160,120,30,0.55)]",
+      badge: "bg-gold-deep",
+    };
+  }
+  if (recipient === "lena") {
+    return {
+      bg: "bg-sky-light",
+      tape: "bg-[rgba(30,111,165,0.55)]",
+      badge: "bg-sky-deep",
+    };
+  }
+  if (recipient === "miu") {
+    return {
+      bg: "bg-pink-light",
+      tape: "bg-[rgba(190,80,130,0.55)]",
+      badge: "bg-pink-deep",
+    };
+  }
+  return {
+    bg: "bg-white",
+    tape: "bg-[rgba(200,160,130,0.5)]",
+    badge: "bg-sky-deep",
+  };
+}
+
 export function Polaroid({
   video,
   index,
@@ -27,6 +64,7 @@ export function Polaroid({
   const tapeRot = index % 2 === 0 ? "-4deg" : "3deg";
   const thumb = thumbForVideo(video.src_type, video.src, video.thumb);
   const fromGuest = video.source === "qr";
+  const colors = colorsFor(fromGuest, video.recipient ?? "both");
 
   // QR videos always carry attribution via the invite label (admin-set).
   // Other sources (request/admin) use the optional display_name + show_name
@@ -39,7 +77,7 @@ export function Polaroid({
 
   return (
     <article
-      className={`group relative w-72 shrink-0 cursor-pointer ${fromGuest ? "bg-sky-light" : "bg-white"} px-3.5 pt-3.5 pb-14 shadow-polaroid rotate-(--rot,0deg) transition-[transform,box-shadow] duration-350 ease-bounce hover:rotate-0 hover:scale-[1.06] hover:shadow-polaroid-hover hover:z-10`}
+      className={`group relative w-72 shrink-0 cursor-pointer ${colors.bg} px-3.5 pt-3.5 pb-14 shadow-polaroid rotate-(--rot,0deg) transition-[transform,box-shadow] duration-350 ease-bounce hover:rotate-0 hover:scale-[1.06] hover:shadow-polaroid-hover hover:z-10`}
       style={
         {
           "--rot": rot,
@@ -49,11 +87,11 @@ export function Polaroid({
     >
       <span
         aria-hidden
-        className={`absolute top-[-11px] left-1/2 h-[22px] w-[58px] -translate-x-1/2 rotate-(--tape-rot,-4deg) rounded-[2px] ${fromGuest ? "bg-[rgba(30,111,165,0.55)]" : "bg-[rgba(200,160,130,0.5)]"}`}
+        className={`absolute top-[-11px] left-1/2 h-[22px] w-[58px] -translate-x-1/2 rotate-(--tape-rot,-4deg) rounded-[2px] ${colors.tape}`}
       />
       {badgeName && (
         <span
-          className="absolute top-2 right-2 z-2 max-w-[140px] truncate rounded-full bg-sky-deep px-2 py-0.5 text-[9px] font-medium uppercase tracking-widest text-white shadow-sm"
+          className={`absolute top-2 right-2 z-2 max-w-[140px] truncate rounded-full ${colors.badge} px-2 py-0.5 text-[9px] font-medium uppercase tracking-widest text-white shadow-sm`}
           title={`by ${badgeName}`}
         >
           {badgeName}
@@ -79,12 +117,14 @@ export function Polaroid({
           </div>
         )}
         <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 transition-colors duration-250 group-hover:bg-black/20">
-          <div
-            aria-hidden
-            className="flex size-13 scale-0 items-center justify-center rounded-full bg-white/90 text-xl text-ink opacity-0 transition-[transform,opacity] duration-250ms ease-bounce group-hover:scale-100 group-hover:opacity-100"
-          >
-            ▶
-          </div>
+          {video.src_type !== "image" && (
+            <div
+              aria-hidden
+              className="flex size-13 scale-0 items-center justify-center rounded-full bg-white/90 text-xl text-ink opacity-0 transition-[transform,opacity] duration-250ms ease-bounce group-hover:scale-100 group-hover:opacity-100"
+            >
+              ▶
+            </div>
+          )}
         </div>
       </button>
       <div className="font-script absolute inset-x-0 bottom-[14px] px-2 text-center text-2xl leading-tight text-ink-3">

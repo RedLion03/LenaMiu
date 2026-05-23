@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { getCurrentAdmin } from "@/lib/auth";
+import { SubmitButton } from "@/components/SubmitButton";
 import { signInWithPassword } from "./actions";
 
 type SearchParams = Promise<{ error?: string }>;
@@ -65,12 +66,12 @@ export default async function LoginPage({
             className="rounded-xl border border-ink/15 bg-cream px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
           />
 
-          <button
-            type="submit"
-            className="mt-3 rounded-full bg-sky px-5 py-2 text-sm font-medium uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+          <SubmitButton
+            pendingLabel="signing in…"
+            className="mt-3 rounded-full bg-sky px-5 py-2 text-sm font-medium uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
           >
             sign in
-          </button>
+          </SubmitButton>
         </form>
 
         {errorMessage && (

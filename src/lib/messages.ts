@@ -61,7 +61,7 @@ export async function fetchApprovedMessages(): Promise<WallMessage[]> {
   const { data: rows, error } = await svc
     .from("messages")
     .select(
-      "id, text, source, invite_id, display_name, show_name, created_at",
+      "id, text, source, invite_id, display_name, show_name, recipient, image_url, created_at",
     )
     .eq("status", "approved")
     .order("created_at", { ascending: false });
@@ -106,6 +106,8 @@ export async function fetchApprovedMessages(): Promise<WallMessage[]> {
       message: r.text,
       author,
       source: fromGuest ? "qr" : "request",
+      recipient: r.recipient ?? "both",
+      imageUrl: r.image_url ?? null,
       created_at: r.created_at,
     };
   });

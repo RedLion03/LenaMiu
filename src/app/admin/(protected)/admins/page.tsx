@@ -1,7 +1,8 @@
-import { Trash2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { createServiceClient } from "@/lib/supabase/service";
 import { ConfirmForm } from "@/components/ConfirmForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { addAdmin, removeAdmin } from "./actions";
 
 type SearchParams = Promise<{
@@ -120,14 +121,16 @@ export default async function AdminsPage({
                         confirm={`remove ${a.email}?`}
                       >
                         <input type="hidden" name="user_id" value={a.user_id} />
-                        <button
-                          type="submit"
+                        <SubmitButton
                           disabled={isSelf}
                           aria-label="remove admin"
+                          pendingContent={
+                            <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
+                          }
                           className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-not-allowed disabled:opacity-30 disabled:hover:bg-transparent disabled:hover:text-ink-2"
                         >
                           <Trash2 size={15} strokeWidth={1.75} />
-                        </button>
+                        </SubmitButton>
                       </ConfirmForm>
                     </div>
                   </td>
@@ -180,12 +183,12 @@ export default async function AdminsPage({
               className="mt-1 w-full rounded-xl border border-ink/15 bg-cream px-4 py-2 font-mono text-sm text-ink focus:border-sky-dark focus:outline-none"
             />
           </div>
-          <button
-            type="submit"
-            className="self-end rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+          <SubmitButton
+            pendingLabel="adding…"
+            className="self-end rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
           >
             add admin
-          </button>
+          </SubmitButton>
         </form>
       </div>
     </div>

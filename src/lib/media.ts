@@ -46,5 +46,8 @@ export function thumbForVideo(
   if (srcType === "upload") {
     return cloudinaryThumb(src);
   }
+  if (srcType === "image") {
+    return src;
+  }
   return null;
 }

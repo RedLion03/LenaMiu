@@ -1,11 +1,15 @@
 "use client";
 
 import { useState } from "react";
+import { Film, Image as ImageIcon, Link as LinkIcon } from "lucide-react";
 import {
+  createImageVideo,
   createUploadVideo,
   createYouTubeVideo,
 } from "../actions";
-import { VideoUploader, type UploadResult } from "@/components/VideoUploader";
+import { MediaUploader, type UploadResult } from "@/components/MediaUploader";
+import { RecipientField } from "@/components/RecipientField";
+import { SubmitButton } from "@/components/SubmitButton";
 
 type Props = {
   errorParam: string | null;
@@ -18,40 +22,57 @@ const ERRORS: Record<string, string> = {
   "upload not finished": "Wait for the upload to finish before saving.",
 };
 
+type Mode = "youtube" | "upload" | "image";
+
 export function NewVideoForm({ errorParam }: Props) {
-  const [mode, setMode] = useState<"youtube" | "upload">("youtube");
+  const [mode, setMode] = useState<Mode>("youtube");
   const [upload, setUpload] = useState<UploadResult | null>(null);
 
-  const action = mode === "youtube" ? createYouTubeVideo : createUploadVideo;
+  const action =
+    mode === "youtube"
+      ? createYouTubeVideo
+      : mode === "image"
+        ? createImageVideo
+        : createUploadVideo;
   const error = errorParam
     ? (ERRORS[decodeURIComponent(errorParam)] ?? decodeURIComponent(errorParam))
     : null;
 
+  const TABS: { id: Mode; label: string; Icon: typeof Film }[] = [
+    { id: "youtube", label: "youtube", Icon: LinkIcon },
+    { id: "upload", label: "video", Icon: Film },
+    { id: "image", label: "image", Icon: ImageIcon },
+  ];
+
   return (
     <form action={action} className="mt-6 flex flex-col gap-4">
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setMode("youtube")}
-          className={`flex-1 rounded-full px-4 py-2 text-xs uppercase tracking-widest transition ${
-            mode === "youtube"
-              ? "bg-sky text-ink"
-              : "border border-ink/15 text-ink-2 hover:bg-ink/5"
-          }`}
-        >
-          youtube link
-        </button>
-        <button
-          type="button"
-          onClick={() => setMode("upload")}
-          className={`flex-1 rounded-full px-4 py-2 text-xs uppercase tracking-widest transition ${
-            mode === "upload"
-              ? "bg-sky text-ink"
-              : "border border-ink/15 text-ink-2 hover:bg-ink/5"
-          }`}
-        >
-          upload from device
-        </button>
+      <div
+        role="tablist"
+        className="flex items-end justify-center gap-8 border-b border-ink/10"
+      >
+        {TABS.map(({ id, label, Icon }) => {
+          const active = mode === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => {
+                setMode(id);
+                setUpload(null);
+              }}
+              className={`-mb-px flex cursor-pointer items-center gap-2 border-b-2 px-1 pb-3 text-xs uppercase tracking-widest transition-colors ${
+                active
+                  ? "border-sky-deep text-ink"
+                  : "border-transparent text-ink-3 hover:text-ink-2"
+              }`}
+            >
+              <Icon size={16} strokeWidth={1.75} />
+              {label}
+            </button>
+          );
+        })}
       </div>
 
       <div>
@@ -71,6 +92,8 @@ export function NewVideoForm({ errorParam }: Props) {
           className="mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
         />
       </div>
+
+      <RecipientField />
 
       {mode === "youtube" ? (
         <div>
@@ -96,7 +119,11 @@ export function NewVideoForm({ errorParam }: Props) {
             name="cloudinaryUrl"
             value={upload?.secure_url ?? ""}
           />
-          <VideoUploader role="admin" onChange={setUpload} />
+          <MediaUploader
+            role="admin"
+            kind={mode === "image" ? "image" : "video"}
+            onChange={setUpload}
+          />
         </>
       )}
 
@@ -116,13 +143,13 @@ export function NewVideoForm({ errorParam }: Props) {
         </p>
       )}
 
-      <button
-        type="submit"
-        disabled={mode === "upload" && !upload}
+      <SubmitButton
+        disabled={(mode === "upload" || mode === "image") && !upload}
+        pendingLabel="saving…"
         className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-4"
       >
         save
-      </button>
+      </SubmitButton>
     </form>
   );
 }

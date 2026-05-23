@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { SubmitButton } from "@/components/SubmitButton";
 import { signOut } from "./actions";
 
 export default async function ProtectedAdminLayout({
@@ -42,12 +43,12 @@ export default async function ProtectedAdminLayout({
         <div className="flex items-center gap-4 text-xs text-ink-2">
           <span className="hidden sm:inline">{user.email}</span>
           <form action={signOut}>
-            <button
-              type="submit"
-              className="rounded-full border border-ink/15 px-3 py-1 uppercase tracking-widest hover:bg-ink/5"
+            <SubmitButton
+              pendingLabel="signing out…"
+              className="rounded-full border border-ink/15 px-3 py-1 uppercase tracking-widest hover:bg-ink/5 disabled:cursor-wait disabled:opacity-70"
             >
               sign out
-            </button>
+            </SubmitButton>
           </form>
         </div>
       </header>

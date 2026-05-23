@@ -23,7 +23,7 @@ export default async function RequestPage({
         </Link>
         <h2 className="font-display text-center text-[clamp(2rem,5vw,2.75rem)] font-medium text-ink tracking-[-0.01em] mt-4 mb-10">share something</h2>
         <p className="-mt-6 mb-8 text-center text-sm italic text-ink-2">
-          suggest a video or send a message — we&apos;ll review before it
+          suggest a video/image or send a message — we&apos;ll review before it
           joins the gallery.
         </p>
 

@@ -22,7 +22,7 @@ async function fetchApprovedVideos(): Promise<
   const { data, error } = await supabase
     .from("videos")
     .select(
-      "id, src_type, src, thumb, caption, source, status, requester_email, invite_id, display_name, show_name, reviewer_notes, reviewed_by, reviewed_at, likes_count, created_at, created_by",
+      "id, src_type, src, thumb, caption, source, status, requester_email, invite_id, display_name, show_name, reviewer_notes, reviewed_by, reviewed_at, likes_count, recipient, created_at, created_by",
     )
     .eq("status", "approved")
     .order("created_at", { ascending: false });
@@ -56,19 +56,22 @@ export default async function Home({
 
   return (
     <>
-      <GalleryHeader />
-      <div className="mx-auto flex max-w-3xl justify-center gap-6 px-6 text-xs uppercase tracking-widest text-ink-3">
-        <Link href="/request" className="transition-colors hover:text-ink">
-          request a memory
-        </Link>
-        <span aria-hidden className="text-ink-4">
-          ·
-        </span>
-        <Link href="/subscribe" className="transition-colors hover:text-ink">
-          subscribe
-        </Link>
-      </div>
-      <section className="mx-auto w-full max-w-5xl px-6 py-12">
+      <GalleryHeader
+        actions={
+          <>
+            <Link href="/request" className="transition-colors hover:text-ink">
+              request a memory
+            </Link>
+            <span aria-hidden className="text-ink-4">
+              ·
+            </span>
+            <Link href="/subscribe" className="transition-colors hover:text-ink">
+              subscribe
+            </Link>
+          </>
+        }
+      />
+      <section className="mx-auto w-full max-w-5xl flex-1 px-6 py-12">
         <GalleryTabs active={tab} basePath="/" counts={{ memories: videos.length, messages: messages.length }} />
         <div className="mt-10">
           {tab === "memories" ? (

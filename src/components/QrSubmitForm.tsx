@@ -1,23 +1,32 @@
 "use client";
 
 import { useState } from "react";
-import { Pencil, Trash2 } from "lucide-react";
+import { Film, Image as ImageIcon, Loader2, Pencil, Trash2 } from "lucide-react";
 import {
   removeMessage,
   removeVideo,
   saveMessage,
   saveVideo,
 } from "@/app/q/[token]/actions";
-import { VideoUploader, type UploadResult } from "./VideoUploader";
+import { MediaUploader, type UploadResult } from "./MediaUploader";
+import { SubmitButton } from "./SubmitButton";
+import type { Recipient } from "@/lib/supabase/database.types";
 
 type Status = "pending" | "approved" | "rejected";
 
 type Existing = {
-  message: { status: Status; text: string } | null;
+  message: {
+    status: Status;
+    text: string;
+    recipient: Recipient;
+    image_url: string | null;
+  } | null;
   video: {
     status: Status;
     caption: string;
     thumb: string | null;
+    src_type: "upload" | "youtube" | "image";
+    recipient: Recipient;
   } | null;
 };
 
@@ -35,6 +44,7 @@ const ERRORS: Record<string, string> = {
   "caption required": "Add a caption for the video.",
   "upload not finished": "Wait for the upload to finish before sending.",
   "invite-invalid": "This invite is no longer valid.",
+  "invalid recipient": "Pick who this is for.",
 };
 
 const STATUS_LABEL: Record<Status, string> = {
@@ -105,6 +115,7 @@ function MessageCard({
   justRemoved: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [image, setImage] = useState<UploadResult | null>(null);
   const showForm = !existing || editing;
 
   return (
@@ -126,6 +137,11 @@ function MessageCard({
       {showForm ? (
         <form action={saveMessage} className="mt-3 flex flex-col gap-3">
           <input type="hidden" name="token" value={token} />
+          <input
+            type="hidden"
+            name="imageUrl"
+            value={image?.secure_url ?? existing?.image_url ?? ""}
+          />
           <textarea
             name="message"
             required
@@ -136,6 +152,22 @@ function MessageCard({
             placeholder="say something nice…"
             className="resize-none rounded-xl border border-ink/15 bg-cream px-4 py-3 text-ink focus:border-sky-dark focus:outline-none"
           />
+          <div>
+            <p className="text-xs uppercase tracking-widest text-ink-2">
+              attach an image (optional)
+            </p>
+            <div className="mt-2">
+              <MediaUploader role="qr" kind="image" inviteToken={token} onChange={setImage} />
+            </div>
+            {!image && existing?.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={existing.image_url}
+                alt="current attachment"
+                className="mt-2 max-h-40 rounded-xl object-cover"
+              />
+            )}
+          </div>
           <div className="flex justify-end gap-2">
             {existing && (
               <button
@@ -146,12 +178,12 @@ function MessageCard({
                 cancel
               </button>
             )}
-            <button
-              type="submit"
-              className="cursor-pointer rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+            <SubmitButton
+              pendingLabel="saving…"
+              className="cursor-pointer rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
             >
               {existing ? "save changes" : "send"}
-            </button>
+            </SubmitButton>
           </div>
         </form>
       ) : (
@@ -159,6 +191,14 @@ function MessageCard({
           <blockquote className="whitespace-pre-wrap border-l-2 border-sky pl-3 text-sm italic text-ink">
             {existing.text}
           </blockquote>
+          {existing.image_url && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={existing.image_url}
+              alt="attachment"
+              className="mt-3 max-h-48 rounded-xl object-cover"
+            />
+          )}
           <div className="mt-3 flex items-center justify-between">
             <StatusBadge status={existing.status} />
             <div className="flex gap-1">
@@ -177,13 +217,15 @@ function MessageCard({
                 }}
               >
                 <input type="hidden" name="token" value={token} />
-                <button
-                  type="submit"
+                <SubmitButton
                   aria-label="remove message"
-                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-red-50 hover:text-red-700"
+                  pendingContent={
+                    <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
+                  }
+                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-wait"
                 >
                   <Trash2 size={15} strokeWidth={1.75} />
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </div>
@@ -205,13 +247,16 @@ function VideoCard({
   justRemoved: boolean;
 }) {
   const [editing, setEditing] = useState(false);
+  const [mode, setMode] = useState<"video" | "image">(
+    existing?.src_type === "image" ? "image" : "video",
+  );
   const [upload, setUpload] = useState<UploadResult | null>(null);
   const showForm = !existing || editing;
 
   return (
     <div className="rounded-2xl border border-ink/10 bg-white p-5">
       <h3 className="font-display text-lg font-medium text-ink">
-        share a video
+        share a memory
       </h3>
       {justSubmitted && !editing && (
         <p className="mt-2 rounded-xl bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
@@ -220,18 +265,52 @@ function VideoCard({
       )}
       {justRemoved && !existing && (
         <p className="mt-2 rounded-xl bg-ink/5 px-3 py-2 text-xs text-ink-2">
-          video removed.
+          memory removed.
         </p>
       )}
 
       {showForm ? (
         <form action={saveVideo} className="mt-3 flex flex-col gap-3">
           <input type="hidden" name="token" value={token} />
+          <input type="hidden" name="mode" value={mode} />
           <input
             type="hidden"
             name="cloudinaryUrl"
             value={upload?.secure_url ?? ""}
           />
+          <div
+            role="tablist"
+            className="flex items-end justify-center gap-8 border-b border-ink/10"
+          >
+            {(
+              [
+                { id: "video" as const, label: "video", Icon: Film },
+                { id: "image" as const, label: "image", Icon: ImageIcon },
+              ]
+            ).map(({ id, label, Icon }) => {
+              const active = mode === id;
+              return (
+                <button
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => {
+                    setMode(id);
+                    setUpload(null);
+                  }}
+                  className={`-mb-px flex cursor-pointer items-center gap-2 border-b-2 px-1 pb-2 text-xs uppercase tracking-widest transition-colors ${
+                    active
+                      ? "border-sky-deep text-ink"
+                      : "border-transparent text-ink-3 hover:text-ink-2"
+                  }`}
+                >
+                  <Icon size={16} strokeWidth={1.75} />
+                  {label}
+                </button>
+              );
+            })}
+          </div>
           <input
             name="caption"
             type="text"
@@ -241,7 +320,12 @@ function VideoCard({
             placeholder="caption…"
             className="rounded-xl border border-ink/15 bg-cream px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
           />
-          <VideoUploader role="qr" inviteToken={token} onChange={setUpload} />
+          <MediaUploader
+            role="qr"
+            kind={mode}
+            inviteToken={token}
+            onChange={setUpload}
+          />
           <div className="flex justify-end gap-2">
             {existing && (
               <button
@@ -255,13 +339,13 @@ function VideoCard({
                 cancel
               </button>
             )}
-            <button
-              type="submit"
+            <SubmitButton
               disabled={!upload}
+              pendingLabel="saving…"
               className="cursor-pointer rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-not-allowed disabled:bg-ink/15 disabled:text-ink-4"
             >
               {existing ? "replace" : "send"}
-            </button>
+            </SubmitButton>
           </div>
         </form>
       ) : (
@@ -285,7 +369,7 @@ function VideoCard({
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                aria-label="replace video"
+                aria-label="replace memory"
                 className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-ink/5 hover:text-ink"
               >
                 <Pencil size={15} strokeWidth={1.75} />
@@ -293,17 +377,19 @@ function VideoCard({
               <form
                 action={removeVideo}
                 onSubmit={(e) => {
-                  if (!confirm("remove your video?")) e.preventDefault();
+                  if (!confirm("remove your memory?")) e.preventDefault();
                 }}
               >
                 <input type="hidden" name="token" value={token} />
-                <button
-                  type="submit"
-                  aria-label="remove video"
-                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-red-50 hover:text-red-700"
+                <SubmitButton
+                  aria-label="remove memory"
+                  pendingContent={
+                    <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
+                  }
+                  className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 transition-colors hover:bg-red-50 hover:text-red-700 disabled:cursor-wait"
                 >
                   <Trash2 size={15} strokeWidth={1.75} />
-                </button>
+                </SubmitButton>
               </form>
             </div>
           </div>

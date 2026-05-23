@@ -1,9 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { Heart } from "lucide-react";
+import { Heart, Loader2 } from "lucide-react";
 import { Polaroid, type VideoRow } from "./Polaroid";
 import { Lightbox } from "./Lightbox";
+import { SubmitButton } from "./SubmitButton";
 import { toggleLike } from "@/app/q/[token]/actions";
 
 type Props = {
@@ -47,18 +48,20 @@ export function Gallery({
                 <form action={toggleLike}>
                   <input type="hidden" name="token" value={qrToken} />
                   <input type="hidden" name="video_id" value={video.id} />
-                  <button
-                    type="submit"
+                  <SubmitButton
                     data-liked={liked.has(video.id)}
                     aria-label={liked.has(video.id) ? "unlike" : "like"}
-                    className="inline-flex cursor-pointer items-center text-[#ff6b6b] [text-shadow:0_1px_2px_rgba(0,0,0,0.15)] transition duration-150 hover:scale-110 hover:text-[#ff3366] data-[liked=true]:text-[#ff1a55] data-[liked=true]:hover:text-[#e60044]"
+                    pendingContent={
+                      <Loader2 size={22} strokeWidth={1.75} className="animate-spin" />
+                    }
+                    className="inline-flex cursor-pointer items-center text-[#ff6b6b] [text-shadow:0_1px_2px_rgba(0,0,0,0.15)] transition duration-150 hover:scale-110 hover:text-[#ff3366] data-[liked=true]:text-[#ff1a55] data-[liked=true]:hover:text-[#e60044] disabled:cursor-wait disabled:hover:scale-100"
                   >
                     <Heart
                       size={22}
                       strokeWidth={1.75}
                       fill={liked.has(video.id) ? "currentColor" : "none"}
                     />
-                  </button>
+                  </SubmitButton>
                 </form>
               ) : undefined
             }

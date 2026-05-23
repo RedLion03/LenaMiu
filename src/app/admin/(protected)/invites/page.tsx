@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireAdmin } from "@/lib/auth";
+import { SubmitButton } from "@/components/SubmitButton";
 import {
   createInvite,
   deleteInvite,
@@ -73,12 +74,12 @@ export default async function AdminInvitesPage({
               className="mt-1 rounded-xl border border-ink/15 bg-white px-3 py-1.5 text-sm normal-case tracking-normal text-ink focus:border-sky-dark focus:outline-none"
             />
           </label>
-          <button
-            type="submit"
-            className="rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+          <SubmitButton
+            pendingLabel="creating…"
+            className="rounded-full bg-sky px-5 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
           >
             + new invite
-          </button>
+          </SubmitButton>
         </form>
       </div>
 
@@ -145,21 +146,21 @@ export default async function AdminInvitesPage({
                         action={inv.revoked_at ? unrevokeInvite : revokeInvite}
                       >
                         <input type="hidden" name="id" value={inv.id} />
-                        <button
-                          type="submit"
-                          className="rounded-full border border-ink/15 px-3 py-1 text-xs uppercase tracking-widest hover:bg-ink/5"
+                        <SubmitButton
+                          pendingLabel="…"
+                          className="rounded-full border border-ink/15 px-3 py-1 text-xs uppercase tracking-widest hover:bg-ink/5 disabled:cursor-wait disabled:opacity-70"
                         >
                           {inv.revoked_at ? "unrevoke" : "revoke"}
-                        </button>
+                        </SubmitButton>
                       </form>
                       <form action={deleteInvite}>
                         <input type="hidden" name="id" value={inv.id} />
-                        <button
-                          type="submit"
-                          className="rounded-full border border-red-200 px-3 py-1 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50"
+                        <SubmitButton
+                          pendingLabel="…"
+                          className="rounded-full border border-red-200 px-3 py-1 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:cursor-wait disabled:opacity-70"
                         >
                           delete
-                        </button>
+                        </SubmitButton>
                       </form>
                     </div>
                   </td>

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { Pencil, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { requireAdmin } from "@/lib/auth";
 import { ConfirmForm } from "@/components/ConfirmForm";
+import { SubmitButton } from "@/components/SubmitButton";
 import { deleteMessage, setMessageStatus } from "./actions";
 
 type SearchParams = Promise<{ error?: string; status?: string }>;
@@ -26,6 +27,12 @@ const SOURCE_LABEL: Record<string, string> = {
   admin: "admin",
 };
 
+const RECIPIENT_TONE: Record<string, string> = {
+  lena: "bg-sky-light text-sky-deep",
+  miu: "bg-pink-light text-pink-deep",
+  both: "bg-ink/5 text-ink-2",
+};
+
 export default async function AdminMessagesPage({
   searchParams,
 }: {
@@ -45,7 +52,7 @@ export default async function AdminMessagesPage({
   let q = supabase
     .from("messages")
     .select(
-      "id, text, source, status, display_name, show_name, requester_email, created_at",
+      "id, text, source, status, display_name, show_name, requester_email, recipient, image_url, created_at",
     )
     .order("created_at", { ascending: false });
   if (filter !== "all") q = q.eq("status", filter);
@@ -98,7 +105,7 @@ export default async function AdminMessagesPage({
             key={r.id}
             className="rounded-2xl border border-ink/10 bg-white p-5"
           >
-            <div className="flex items-center gap-3 text-xs uppercase tracking-widest text-ink-2">
+            <div className="flex flex-wrap items-center gap-3 text-xs uppercase tracking-widest text-ink-2">
               <span
                 className={`rounded-full px-2 py-0.5 ${SOURCE_TONE[r.source] ?? ""}`}
               >
@@ -108,6 +115,11 @@ export default async function AdminMessagesPage({
                 className={`rounded-full px-2 py-0.5 ${STATUS_TONE[r.status] ?? ""}`}
               >
                 {r.status}
+              </span>
+              <span
+                className={`rounded-full px-2 py-0.5 ${RECIPIENT_TONE[r.recipient] ?? ""}`}
+              >
+                for {r.recipient}
               </span>
               <span>{new Date(r.created_at).toLocaleString()}</span>
               {r.requester_email && (
@@ -119,6 +131,14 @@ export default async function AdminMessagesPage({
             <blockquote className="mt-3 whitespace-pre-wrap border-l-2 border-sky pl-3 text-sm italic text-ink">
               {r.text}
             </blockquote>
+            {r.image_url && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={r.image_url}
+                alt="attachment"
+                className="mt-3 max-h-72 rounded-xl object-cover"
+              />
+            )}
             {r.display_name && (
               <p className="mt-2 text-xs text-ink-3">
                 — {r.display_name}{" "}
@@ -133,22 +153,22 @@ export default async function AdminMessagesPage({
                   <form action={setMessageStatus}>
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="status" value="approved" />
-                    <button
-                      type="submit"
-                      className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs uppercase tracking-widest text-white hover:bg-emerald-600"
+                    <SubmitButton
+                      pendingLabel="approving…"
+                      className="rounded-full bg-emerald-500 px-4 py-1.5 text-xs uppercase tracking-widest text-white hover:bg-emerald-600 disabled:cursor-wait disabled:opacity-70"
                     >
                       approve
-                    </button>
+                    </SubmitButton>
                   </form>
                   <form action={setMessageStatus}>
                     <input type="hidden" name="id" value={r.id} />
                     <input type="hidden" name="status" value="rejected" />
-                    <button
-                      type="submit"
-                      className="rounded-full border border-red-200 px-4 py-1.5 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50"
+                    <SubmitButton
+                      pendingLabel="rejecting…"
+                      className="rounded-full border border-red-200 px-4 py-1.5 text-xs uppercase tracking-widest text-red-700 hover:bg-red-50 disabled:cursor-wait disabled:opacity-70"
                     >
                       reject
-                    </button>
+                    </SubmitButton>
                   </form>
                 </div>
               ) : (
@@ -167,13 +187,15 @@ export default async function AdminMessagesPage({
                   confirm="delete this message?"
                 >
                   <input type="hidden" name="id" value={r.id} />
-                  <button
-                    type="submit"
+                  <SubmitButton
                     aria-label="delete"
-                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 hover:bg-red-50 hover:text-red-700"
+                    pendingContent={
+                      <Loader2 size={15} strokeWidth={1.75} className="animate-spin" />
+                    }
+                    className="inline-flex size-8 cursor-pointer items-center justify-center rounded-full text-ink-2 hover:bg-red-50 hover:text-red-700 disabled:cursor-wait"
                   >
                     <Trash2 size={15} strokeWidth={1.75} />
-                  </button>
+                  </SubmitButton>
                 </ConfirmForm>
               </div>
             </div>

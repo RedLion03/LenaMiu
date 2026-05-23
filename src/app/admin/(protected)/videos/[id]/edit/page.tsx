@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth";
+import { RecipientField } from "@/components/RecipientField";
+import { SubmitButton } from "@/components/SubmitButton";
 import { updateVideo } from "../../actions";
 
 type RouteParams = Promise<{ id: string }>;
@@ -19,7 +21,9 @@ export default async function EditVideoPage({
 
   const { data: video, error } = await supabase
     .from("videos")
-    .select("id, caption, status, src_type, src, source, requester_email")
+    .select(
+      "id, caption, status, src_type, src, source, requester_email, recipient",
+    )
     .eq("id", id)
     .maybeSingle();
 
@@ -65,6 +69,7 @@ export default async function EditVideoPage({
             className="mt-1 w-full rounded-xl border border-ink/15 bg-white px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
           />
         </div>
+        <RecipientField defaultValue={video.recipient ?? "both"} />
         <div>
           <label
             htmlFor="status"
@@ -91,12 +96,12 @@ export default async function EditVideoPage({
           </p>
         )}
 
-        <button
-          type="submit"
-          className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+        <SubmitButton
+          pendingLabel="saving…"
+          className="self-start rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
         >
           save changes
-        </button>
+        </SubmitButton>
       </form>
     </div>
   );

@@ -19,10 +19,10 @@ export default async function NewVideoPage({
         ← back to videos
       </Link>
       <h1 className="mt-4 font-display text-3xl font-medium text-ink">
-        new video
+        new video/image
       </h1>
       <p className="mt-1 text-sm text-ink-2">
-        paste a YouTube link or upload a video from your device.
+        paste a YouTube link or upload a video/image from your device.
       </p>
 
       <NewVideoForm errorParam={error ?? null} />

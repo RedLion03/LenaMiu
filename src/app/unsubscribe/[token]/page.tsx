@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GalleryHeader } from "@/components/GalleryHeader";
+import { SubmitButton } from "@/components/SubmitButton";
 import { createServiceClient } from "@/lib/supabase/service";
 import { confirmUnsubscribe } from "./actions";
 
@@ -90,12 +91,12 @@ export default async function UnsubscribePage({
               <span className="font-medium">{subscriber.email}</span> from new
               memory emails?
             </p>
-            <button
-              type="submit"
-              className="mt-6 rounded-full border border-ink/15 px-6 py-2 text-xs uppercase tracking-widest hover:bg-ink/5"
+            <SubmitButton
+              pendingLabel="unsubscribing…"
+              className="mt-6 rounded-full border border-ink/15 px-6 py-2 text-xs uppercase tracking-widest hover:bg-ink/5 disabled:cursor-wait disabled:opacity-70"
             >
               confirm unsubscribe
-            </button>
+            </SubmitButton>
             {error && (
               <p className="mt-3 text-sm text-red-600">
                 {decodeURIComponent(error)}

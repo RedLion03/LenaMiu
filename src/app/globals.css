@@ -5,6 +5,12 @@
   --color-sky-dark: #3a9de0;
   --color-sky-deep: #1e6fa5;
   --color-sky-light: #cce9fb;
+  --color-pink: #f48fb6;
+  --color-pink-deep: #c2185b;
+  --color-pink-light: #fcd7e3;
+  --color-gold: #d4a635;
+  --color-gold-deep: #8a6a18;
+  --color-gold-light: #fbeec1;
   --color-cream: #f9f5ee;
   --color-ink: #1a1a2e;
   --color-ink-2: #4a4a5e;
@@ -17,6 +23,12 @@
   --color-sky-dark: var(--color-sky-dark);
   --color-sky-deep: var(--color-sky-deep);
   --color-sky-light: var(--color-sky-light);
+  --color-pink: var(--color-pink);
+  --color-pink-deep: var(--color-pink-deep);
+  --color-pink-light: var(--color-pink-light);
+  --color-gold: var(--color-gold);
+  --color-gold-deep: var(--color-gold-deep);
+  --color-gold-light: var(--color-gold-light);
   --color-cream: var(--color-cream);
   --color-ink: var(--color-ink);
   --color-ink-2: var(--color-ink-2);

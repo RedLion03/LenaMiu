@@ -5,10 +5,19 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { requireAdmin } from "@/lib/auth";
 
+const recipientSchema = z.enum(["lena", "miu", "both"]).default("both");
+const imageUrlSchema = z
+  .string()
+  .url()
+  .optional()
+  .or(z.literal("").transform(() => undefined));
+
 const createSchema = z.object({
   text: z.string().trim().min(1, "message required").max(500, "too long"),
   displayName: z.string().trim().max(40).optional(),
   showName: z.preprocess((v) => v === "on" || v === true, z.boolean()),
+  recipient: recipientSchema,
+  imageUrl: imageUrlSchema,
 });
 
 const updateSchema = z.object({
@@ -17,6 +26,8 @@ const updateSchema = z.object({
   displayName: z.string().trim().max(40).optional(),
   showName: z.preprocess((v) => v === "on" || v === true, z.boolean()),
   status: z.enum(["pending", "approved", "rejected"]),
+  recipient: recipientSchema,
+  imageUrl: imageUrlSchema,
 });
 
 export async function createMessage(formData: FormData) {
@@ -26,6 +37,8 @@ export async function createMessage(formData: FormData) {
     text: formData.get("text"),
     displayName: formData.get("displayName") || undefined,
     showName: formData.get("showName"),
+    recipient: formData.get("recipient") || undefined,
+    imageUrl: formData.get("imageUrl") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -42,6 +55,8 @@ export async function createMessage(formData: FormData) {
       ? parsed.data.displayName
       : null,
     show_name: parsed.data.showName,
+    recipient: parsed.data.recipient,
+    image_url: parsed.data.imageUrl ?? null,
     reviewed_by: user.id,
     reviewed_at: new Date().toISOString(),
     created_by: user.id,
@@ -65,6 +80,8 @@ export async function updateMessage(formData: FormData) {
     displayName: formData.get("displayName") || undefined,
     showName: formData.get("showName"),
     status: formData.get("status"),
+    recipient: formData.get("recipient") || undefined,
+    imageUrl: formData.get("imageUrl") || undefined,
   });
   if (!parsed.success) {
     redirect(
@@ -91,6 +108,8 @@ export async function updateMessage(formData: FormData) {
         : null,
       show_name: parsed.data.showName,
       status: parsed.data.status,
+      recipient: parsed.data.recipient,
+      image_url: parsed.data.imageUrl ?? null,
       ...(reviewing
         ? { reviewed_by: user.id, reviewed_at: new Date().toISOString() }
         : {}),

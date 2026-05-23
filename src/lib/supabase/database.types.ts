@@ -10,12 +10,13 @@ export type Json =
   | { [key: string]: Json | undefined }
   | Json[];
 
-export type SrcType = "upload" | "youtube";
+export type SrcType = "upload" | "youtube" | "image";
 export type VideoSource = "admin" | "qr" | "requested";
 export type VideoStatus = "draft" | "pending" | "approved" | "rejected";
 export type MessageSource = "admin" | "qr" | "requested";
 export type MessageStatus = "pending" | "approved" | "rejected";
 export type SubscriberStatus = "active" | "unsubscribed";
+export type Recipient = "lena" | "miu" | "both";
 
 export type Database = {
   public: {
@@ -43,6 +44,7 @@ export type Database = {
           reviewed_by: string | null;
           reviewed_at: string | null;
           likes_count: number;
+          recipient: Recipient;
           created_at: string;
           created_by: string | null;
         };
@@ -62,6 +64,7 @@ export type Database = {
           reviewed_by?: string | null;
           reviewed_at?: string | null;
           likes_count?: number;
+          recipient?: Recipient;
           created_at?: string;
           created_by?: string | null;
         };
@@ -81,6 +84,7 @@ export type Database = {
           reviewed_by?: string | null;
           reviewed_at?: string | null;
           likes_count?: number;
+          recipient?: Recipient;
           created_at?: string;
           created_by?: string | null;
         };
@@ -99,6 +103,8 @@ export type Database = {
           reviewer_notes: string | null;
           reviewed_by: string | null;
           reviewed_at: string | null;
+          recipient: Recipient;
+          image_url: string | null;
           created_at: string;
           created_by: string | null;
         };
@@ -114,6 +120,8 @@ export type Database = {
           reviewer_notes?: string | null;
           reviewed_by?: string | null;
           reviewed_at?: string | null;
+          recipient?: Recipient;
+          image_url?: string | null;
           created_at?: string;
           created_by?: string | null;
         };

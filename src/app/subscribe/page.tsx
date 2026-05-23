@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { GalleryHeader } from "@/components/GalleryHeader";
+import { SubmitButton } from "@/components/SubmitButton";
 import { subscribe } from "./actions";
 
 type SearchParams = Promise<{ error?: string; subscribed?: string }>;
@@ -54,12 +55,12 @@ export default async function SubscribePage({
               placeholder="you@example.com"
               className="rounded-xl border border-ink/15 bg-white px-4 py-2 text-ink focus:border-sky-dark focus:outline-none"
             />
-            <button
-              type="submit"
-              className="mt-2 rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white"
+            <SubmitButton
+              pendingLabel="subscribing…"
+              className="mt-2 rounded-full bg-sky px-6 py-2 text-xs uppercase tracking-widest text-ink transition hover:bg-sky-dark hover:text-white disabled:cursor-wait disabled:opacity-70"
             >
               subscribe
-            </button>
+            </SubmitButton>
             {errorMessage && (
               <p className="text-center text-sm text-red-600">{errorMessage}</p>
             )}
