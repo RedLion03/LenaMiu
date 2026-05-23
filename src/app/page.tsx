@@ -40,7 +40,7 @@ export default async function Home({
   searchParams: Promise<{ tab?: string }>;
 }) {
   const { tab: tabParam } = await searchParams;
-  const tab: GalleryTab = tabParam === "messages" ? "messages" : "memories";
+  const tab: GalleryTab = tabParam === "memories" ? "memories" : "messages";
 
   const [{ videos, status }, messages] = await Promise.all([
     fetchApprovedVideos(),

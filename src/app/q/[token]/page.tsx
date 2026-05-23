@@ -32,7 +32,7 @@ export default async function QrLandingPage({
     removed,
     tab: tabParam,
   } = await searchParams;
-  const tab: GalleryTab = tabParam === "messages" ? "messages" : "memories";
+  const tab: GalleryTab = tabParam === "memories" ? "memories" : "messages";
 
   const invite = await validateInviteToken(token);
   if (!invite) return <InvalidInvite />;

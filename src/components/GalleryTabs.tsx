@@ -18,21 +18,21 @@ export function GalleryTabs({ active, basePath, counts }: Props) {
     href: string;
     Icon: typeof Images;
   }[] = [
-    {
-      key: "memories",
-      label: "memories",
-      count: counts.memories,
-      href: basePath,
-      Icon: Images,
-    },
-    {
-      key: "messages",
-      label: "messages",
-      count: counts.messages,
-      href: `${basePath}?tab=messages`,
-      Icon: MessageCircle,
-    },
-  ];
+      {
+        key: "messages",
+        label: "messages",
+        count: counts.messages,
+        href: basePath,
+        Icon: MessageCircle,
+      },
+      {
+        key: "memories",
+        label: "memories",
+        count: counts.memories,
+        href: `${basePath}?tab=memories`,
+        Icon: Images,
+      },
+    ];
 
   return (
     <nav className="flex justify-center gap-10">
@@ -42,11 +42,10 @@ export function GalleryTabs({ active, basePath, counts }: Props) {
           <Link
             key={key}
             href={href}
-            className={`font-display flex items-center gap-2 border-b-2 pb-2 text-2xl transition-colors ${
-              isActive
+            className={`font-display flex items-center gap-2 border-b-2 pb-2 text-2xl transition-colors ${isActive
                 ? "border-sky-deep text-ink"
                 : "border-transparent text-ink-3 hover:text-ink"
-            }`}
+              }`}
           >
             <Icon size={22} strokeWidth={1.5} aria-hidden />
             {label}
